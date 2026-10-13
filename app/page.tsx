@@ -235,8 +235,7 @@ export default function Home() {
             <div className="mt-5 rounded-2xl border border-warn/20 bg-warn/[.04] p-4 text-xs leading-5 text-muted">
               <span className="font-semibold text-warn">Incident context:</span>{" "}
               Bitget publicly described a September 2026 wallet-infrastructure
-              incident; GIWA fake-bridge reporting describes users being lured
-              into sending funds to a fraudulent destination. These incidents
+              incident; GIWA fake-bridge reporting describes a fake chain reusing GIWA's real chain ID that a DEX mistook for GIWA's mainnet, so users bridged funds to a destination nobody had verified. These incidents
               are context for the threat model, not a claim that Anchor would
               prevent every attack.{" "}
               <a
