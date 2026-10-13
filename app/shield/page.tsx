@@ -1,0 +1,476 @@
+"use client";
+import { useState } from "react";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { formatEther, parseEther, getAddress, isAddress } from "viem";
+import {
+  ArrowRight,
+  Clock3,
+  Fingerprint,
+  Loader2,
+  LockKeyhole,
+  ShieldAlert,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
+import Nav from "@/components/Nav";
+import Background from "@/components/Background";
+import SectionTitle from "@/components/SectionTitle";
+import ConnectCard from "@/components/ConnectCard";
+import TxToast from "@/components/TxToast";
+import OnChainPill from "@/components/OnChainPill";
+import { CONTRACTS, AUTH_CONFIG_MANAGER, shortAddress } from "@/lib/anchor";
+import type { AnchorAccountSummary } from "@/lib/anchor";
+import {
+  actionChallenge,
+  credentialFor,
+  signWithPasskey,
+} from "@/lib/webauthn";
+const BEEF = "0x000000000000000000000000000000000000BEEF" as `0x${string}`;
+export default function Shield() {
+  const { address, isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const [amount, setAmount] = useState("0.001");
+  const [to, setTo] = useState<string>(BEEF);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [tx, setTx] = useState<string>();
+  const { data: s, refetch } = useReadContract({
+    address: CONTRACTS.anchorViews.address,
+    abi: CONTRACTS.anchorViews.abi,
+    functionName: "getAccountSummary",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 4000 },
+  });
+  const { data: balance } = useReadContract({
+    address: AUTH_CONFIG_MANAGER,
+    abi: CONTRACTS.authConfigManager.abi,
+    functionName: "accountBalance",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 4000 },
+  });
+  const { data: pending } = useReadContract({
+    address: AUTH_CONFIG_MANAGER,
+    abi: CONTRACTS.authConfigManager.abi,
+    functionName: "pendingTransfers",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 4000 },
+  });
+  const { data: known } = useReadContract({
+    address: AUTH_CONFIG_MANAGER,
+    abi: CONTRACTS.authConfigManager.abi,
+    functionName: "knownDestination",
+    args: address && isAddress(to) ? [address, getAddress(to)] : undefined,
+    query: { enabled: !!address && isAddress(to) },
+  });
+  const x = s as unknown as AnchorAccountSummary | undefined;
+  const passkeyAuths = (x?.authenticators || []).filter(
+    (a: any) =>
+      Number(a.scheme) === 1 && a.active && x?.signingPolicy?.includes(a.id),
+  );
+  const signAction = async (action: string) => {
+    if (!address) throw new Error("Connect a wallet first");
+    const nonce = BigInt(x?.nextNonce ?? 0);
+    const proofs = [];
+    for (const a of passkeyAuths.slice(0, Number(x?.signingThreshold || 1))) {
+      const credential = credentialFor(a.identityId);
+      if (!credential)
+        throw new Error(
+          `Missing browser credential for ${shortAddress(a.identityId)}. Open Identity and register the passkey on this browser.`,
+        );
+      const challenge = await actionChallenge(address, action, nonce);
+      const proof = await signWithPasskey(credential, challenge);
+      proofs.push({ authenticatorId: Number(a.id), proof });
+    }
+    if (proofs.length < Number(x?.signingThreshold || 1))
+      throw new Error(
+        "The current signing threshold needs more passkeys than this browser has available.",
+      );
+    return proofs;
+  };
+  const deposit = async () => {
+    if (!address) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const hash = await writeContractAsync({
+        address: AUTH_CONFIG_MANAGER,
+        abi: CONTRACTS.authConfigManager.abi,
+        functionName: "deposit",
+        args: [address],
+        value: parseEther("0.01"),
+      });
+      setTx(hash);
+      setMsg("0.01 MON deposited into Anchor.");
+      await refetch();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Deposit failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const transfer = async () => {
+    if (!address) return;
+    if (!isAddress(to)) return setMsg("Enter a valid destination address.");
+    let value: bigint;
+    try {
+      value = parseEther(amount);
+    } catch {
+      return setMsg("Enter a valid MON amount.");
+    }
+    if (value <= 0n) return setMsg("Amount must be greater than zero.");
+    setBusy(true);
+    setMsg("");
+    try {
+      const proofs = await signAction("transfer");
+      const hash = await writeContractAsync({
+        address: AUTH_CONFIG_MANAGER,
+        abi: CONTRACTS.authConfigManager.abi,
+        functionName: "verifiedTransferWithPasskey",
+        args: [address, getAddress(to), value, proofs],
+      });
+      setTx(hash);
+      setMsg(
+        known
+          ? "Known destination: transfer executes immediately."
+          : "New destination: transfer is now pending behind the one-hour delay.",
+      );
+      await refetch();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Transfer failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const contest = async () => {
+    if (!address) return;
+    setBusy(true);
+    try {
+      const credential =
+        passkeyAuths[0] && credentialFor(passkeyAuths[0].identityId);
+      if (!credential)
+        throw new Error(
+          "A passkey credential is required to contest the transfer.",
+        );
+      const nonce = BigInt(x?.nextNonce ?? 0);
+      const ch = await actionChallenge(address, "transfercontest", nonce);
+      const proof = await signWithPasskey(credential, ch);
+      const hash = await writeContractAsync({
+        address: AUTH_CONFIG_MANAGER,
+        abi: [
+          {
+            type: "function",
+            name: "contestTransferWithPasskey",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "account", type: "address" },
+              {
+                name: "proofs",
+                type: "tuple[]",
+                components: [
+                  { name: "authenticatorId", type: "uint8" },
+                  {
+                    name: "proof",
+                    type: "tuple",
+                    components: [
+                      { name: "authenticatorData", type: "bytes" },
+                      { name: "clientDataJSONPrefix", type: "string" },
+                      { name: "clientDataJSONSuffix", type: "string" },
+                      { name: "sigR", type: "bytes32" },
+                      { name: "sigS", type: "bytes32" },
+                    ],
+                  },
+                ],
+              },
+            ],
+            outputs: [],
+          },
+        ] as const,
+        functionName: "contestTransferWithPasskey",
+        args: [
+          address,
+          [{ authenticatorId: Number(passkeyAuths[0].id), proof }],
+        ],
+      });
+      setTx(hash);
+      setMsg("Pending transfer contested on-chain. Funds remain in Anchor.");
+      await refetch();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Contest failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const activate = async () => {
+    if (!address) return;
+    setBusy(true);
+    try {
+      const hash = await writeContractAsync({
+        address: AUTH_CONFIG_MANAGER,
+        abi: CONTRACTS.authConfigManager.abi,
+        functionName: "activateTransfer",
+        args: [address],
+      });
+      setTx(hash);
+      setMsg("Pending transfer activation submitted.");
+      await refetch();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Activation failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (!isConnected)
+    return (
+      <>
+        <Background />
+        <Nav />
+        <main className="mx-auto max-w-7xl px-4 pb-24 pt-32 sm:px-6 lg:px-8">
+          <SectionTitle
+            eyebrow="Transfer shield"
+            title="Make the destination prove itself over time."
+            body="Anchor treats a new recipient as an untrusted security event. Sign it, queue it, inspect it, contest it — or wait for the one-hour delay to expire."
+          />
+          <div className="mt-12">
+            <ConnectCard />
+          </div>
+        </main>
+      </>
+    );
+  const pendingExists = Boolean((pending as any)?.[3]);
+  return (
+    <>
+      <Background />
+      <Nav />
+      <main className="mx-auto max-w-7xl px-4 pb-24 pt-32 sm:px-6 lg:px-8">
+        <SectionTitle
+          eyebrow="Transfer shield"
+          title="A transfer can be stopped after it is signed."
+          body="This is the attack-defense flow: passkey authorization is real, destination trust is separate, and unfamiliar recipients enter a pending state instead of moving funds immediately."
+        />
+        <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+          <section className="glass scanline rounded-3xl p-6 sm:p-8">
+            <div className="flex items-center justify-between">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl border border-mint/20 bg-mint/5 text-mint">
+                <LockKeyhole size={23} />
+              </div>
+              <OnChainPill text="Contract enforced" />
+            </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/7 bg-white/[.025] p-5">
+                <p className="text-[10px] uppercase tracking-[.16em] text-muted">
+                  Shield balance
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {balance !== undefined
+                    ? `${Number(formatEther(balance as bigint)).toFixed(4)} MON`
+                    : "—"}
+                </p>
+                <button
+                  disabled={busy}
+                  onClick={deposit}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full border border-mint/20 bg-mint/5 px-4 py-2 text-xs text-mint"
+                >
+                  <ArrowRight size={13} />
+                  Deposit 0.01 MON
+                </button>
+              </div>
+              <div className="rounded-2xl border border-white/7 bg-white/[.025] p-5">
+                <p className="text-[10px] uppercase tracking-[.16em] text-muted">
+                  Destination status
+                </p>
+                <p
+                  className={`mt-2 text-lg font-semibold ${known ? "text-mint" : "text-warn"}`}
+                >
+                  {isAddress(to)
+                    ? known
+                      ? "Trusted"
+                      : "New / delayed"
+                    : "Invalid address"}
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  {known
+                    ? "This recipient is already known to Anchor."
+                    : "A new recipient enters the one-hour delay."}
+                </p>
+              </div>
+            </div>
+            <div className="mt-8">
+              <label className="block text-xs text-muted">
+                Destination address
+                <input
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="mono mt-2 w-full rounded-2xl border border-white/10 bg-white/[.03] px-4 py-3 text-xs outline-none focus:border-mint/30"
+                />
+              </label>
+              <label className="mt-4 block text-xs text-muted">
+                Amount
+                <input
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  inputMode="decimal"
+                  className="mono mt-2 w-full rounded-2xl border border-white/10 bg-white/[.03] px-4 py-3 text-sm outline-none focus:border-mint/30"
+                />
+              </label>
+              <button
+                disabled={busy || x?.configVersion === 0n || pendingExists}
+                onClick={transfer}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-mint px-5 py-4 text-sm font-semibold text-void disabled:opacity-40"
+              >
+                {busy ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Fingerprint size={16} />
+                )}{" "}
+                Sign with passkey
+              </button>
+              <p className="mt-3 text-center text-[10px] text-muted">
+                The browser passkey prompt appears only after you press the
+                button. The contract decides whether the destination executes or
+                waits.
+              </p>
+            </div>
+          </section>
+          <aside className="space-y-3">
+            <div className="glass rounded-3xl p-7">
+              <div className="flex items-center gap-3">
+                <ShieldAlert className="text-warn" size={18} />
+                <p className="text-sm font-semibold">
+                  The live attack rehearsal
+                </p>
+              </div>
+              <div className="mt-6 space-y-4">
+                <Step
+                  n="01"
+                  title="Authorize"
+                  text="A real WebAuthn proof is checked against the signing policy."
+                  active
+                />
+                <Step
+                  n="02"
+                  title="Detect destination"
+                  text="Known recipients execute. New recipients become pending."
+                  active
+                />
+                <Step
+                  n="03"
+                  title="One-hour window"
+                  text="The account can contest the pending transfer before activation."
+                  active
+                />
+                <Step
+                  n="04"
+                  title="Funds move"
+                  text="Only after the delay can a new destination activate."
+                />
+              </div>
+            </div>
+            {pendingExists && (
+              <div className="glass rounded-3xl border-warn/20 p-7">
+                <div className="flex items-center gap-2 text-warn">
+                  <Clock3 size={17} />
+                  <p className="text-sm font-semibold">
+                    Pending transfer detected
+                  </p>
+                </div>
+                <p className="mono mt-4 break-all text-xs">
+                  to: {(pending as any)[0]}
+                </p>
+                <p className="mt-2 text-sm font-semibold">
+                  {Number(formatEther((pending as any)[1] as bigint)).toFixed(
+                    4,
+                  )}{" "}
+                  MON
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  This is the exact pending transfer read from the contract.
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <button
+                    disabled={busy}
+                    onClick={contest}
+                    className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-3 text-xs text-danger"
+                  >
+                    Contest now
+                  </button>
+                  <button
+                    disabled={busy}
+                    onClick={activate}
+                    className="rounded-xl border border-mint/20 bg-mint/5 px-3 py-3 text-xs text-mint"
+                  >
+                    Activate after delay
+                  </button>
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
+        {msg && (
+          <div className="mt-5 rounded-2xl border border-white/8 bg-white/[.025] p-4 text-xs leading-5 text-muted">
+            {msg}
+          </div>
+        )}
+        <div className="mt-10 grid gap-3 sm:grid-cols-3">
+          <Mini
+            icon={ShieldCheck}
+            title="Passkey proof"
+            text="P-256/WebAuthn is checked on-chain."
+          />
+          <Mini
+            icon={Clock3}
+            title="15 seconds"
+            text="New destinations wait before activation."
+          />
+          <Mini
+            icon={XCircle}
+            title="Contest"
+            text="A valid passkey can cancel the pending transfer."
+          />
+        </div>
+      </main>
+      <TxToast hash={tx} onClose={() => setTx(undefined)} />
+    </>
+  );
+}
+function Step({
+  n,
+  title,
+  text,
+  active,
+}: {
+  n: string;
+  title: string;
+  text: string;
+  active?: boolean;
+}) {
+  return (
+    <div className="flex gap-3">
+      <span
+        className={`mono grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] ${active ? "bg-mint/10 text-mint" : "bg-white/5 text-muted"}`}
+      >
+        {n}
+      </span>
+      <div>
+        <p className="text-xs font-semibold">{title}</p>
+        <p className="mt-1 text-[11px] leading-5 text-muted">{text}</p>
+      </div>
+    </div>
+  );
+}
+function Mini({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: any;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="glass rounded-2xl p-5">
+      <Icon size={16} className="text-mint" />
+      <p className="mt-4 text-sm font-semibold">{title}</p>
+      <p className="mt-1 text-xs leading-5 text-muted">{text}</p>
+    </div>
+  );
+}

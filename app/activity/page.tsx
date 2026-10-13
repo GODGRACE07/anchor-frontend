@@ -1,0 +1,298 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useAccount, usePublicClient, useReadContract } from "wagmi";
+import { formatEther, parseAbiItem, parseEventLogs } from "viem";
+import {
+  ArrowUpRight,
+  Blocks,
+  CheckCircle2,
+  Clock3,
+  DatabaseZap,
+  History,
+  ShieldAlert,
+} from "lucide-react";
+import Nav from "@/components/Nav";
+import Background from "@/components/Background";
+import SectionTitle from "@/components/SectionTitle";
+import ConnectCard from "@/components/ConnectCard";
+import OnChainPill from "@/components/OnChainPill";
+import { CONTRACTS, MONAD_EXPLORER, shortAddress } from "@/lib/anchor";
+import type { AnchorAccountSummary } from "@/lib/anchor";
+const identityEvents = [
+  parseAbiItem(
+    "event IdentityRegistered(bytes32 indexed identityId,address indexed owner,string displayName)",
+  ),
+  parseAbiItem("event IdentityDeactivated(bytes32 indexed identityId)"),
+];
+const events = [
+  parseAbiItem(
+    "event ConfigInitialized(address indexed account,uint64 configVersion)",
+  ),
+  parseAbiItem(
+    "event ReconfigurationProposed(address indexed account,uint64 currentVersion,uint64 proposedAt,uint8 riskScore)",
+  ),
+  parseAbiItem(
+    "event ReconfigurationContested(address indexed account,uint64 contestedAt)",
+  ),
+  parseAbiItem(
+    "event ReconfigurationActivated(address indexed account,uint64 newVersion)",
+  ),
+  parseAbiItem("event ExtraConfirmationGiven(address indexed account)"),
+  parseAbiItem("event FundsReceived(address indexed account,uint256 amount)"),
+  parseAbiItem(
+    "event VerifiedTransferExecuted(address indexed account,address indexed to,uint256 amount,uint64 nonce)",
+  ),
+  parseAbiItem(
+    "event TransferProposed(address indexed account,address indexed to,uint256 amount,uint64 proposedAt)",
+  ),
+  parseAbiItem(
+    "event TransferContested(address indexed account,address indexed to,uint64 contestedAt)",
+  ),
+  parseAbiItem(
+    "event NewDestinationTransferActivated(address indexed account,address indexed to,uint256 amount)",
+  ),
+];
+export default function Activity() {
+  const { address, isConnected } = useAccount();
+  const client = usePublicClient();
+  const { data: s } = useReadContract({
+    address: CONTRACTS.anchorViews.address,
+    abi: CONTRACTS.anchorViews.abi,
+    functionName: "getAccountSummary",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 5000 },
+  });
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      if (!address || !client) return;
+      setLoading(true);
+      try {
+        const latest = await client.getBlockNumber();
+        const from = latest > 5000n ? latest - 5000n : 0n;
+        const all: any[] = [];
+        const me = address.toLowerCase();
+        const ids = (((s as any)?.authenticators || []) as any[]).map(
+          (a: any) => String(a.identityId).toLowerCase(),
+        );
+        const windows: bigint[] = [];
+        for (let b = from; b <= latest; b += 90n) windows.push(b);
+        const abi = [...(events as any[]), ...(identityEvents as any[])];
+        const addrs = [
+          CONTRACTS.authConfigManager.address,
+          CONTRACTS.identityRegistry.address,
+        ] as any;
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+        const keep = (l: any) => {
+          const a = l.args || {};
+          return (
+            String(a.account || "").toLowerCase() === me ||
+            String(a.owner || "").toLowerCase() === me ||
+            ids.includes(String(a.identityId || "").toLowerCase())
+          );
+        };
+        let i = 0;
+        const worker = async () => {
+          while (i < windows.length) {
+            const b = windows[i++];
+            const e = b + 89n > latest ? latest : b + 89n;
+            for (let t = 0; t < 5; t++) {
+              try {
+                const raw = await client.getLogs({
+                  address: addrs,
+                  fromBlock: b,
+                  toBlock: e,
+                } as any);
+                const dec = parseEventLogs({
+                  abi,
+                  logs: raw as any,
+                  strict: false,
+                } as any) as any[];
+                for (const l of dec) {
+                  if (keep(l)) all.push(l);
+                }
+                break;
+              } catch (err) {
+                if (t === 4) {
+                  console.warn("ledger scan window failed", err);
+                } else {
+                  await sleep(400 * (t + 1));
+                }
+              }
+            }
+            await sleep(250);
+          }
+        };
+        await Promise.all([worker()]);
+        all.sort((a, b) =>
+          Number((b as any).blockNumber - (a as any).blockNumber),
+        );
+        if (live) setLogs(all.slice(0, 30));
+      } finally {
+        if (live) setLoading(false);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [address, client, s]);
+  if (!isConnected)
+    return (
+      <>
+        <Background />
+        <Nav />
+        <main className="mx-auto max-w-7xl px-4 pb-24 pt-32 sm:px-6 lg:px-8">
+          <SectionTitle
+            eyebrow="Activity"
+            title="A security ledger, not a fake timeline."
+            body="Anchor events are emitted by the contracts themselves. This page reads recent events from Monad testnet and links each transaction to the explorer."
+          />
+          <div className="mt-12">
+            <ConnectCard />
+          </div>
+        </main>
+      </>
+    );
+  const x = s as unknown as AnchorAccountSummary | undefined;
+  return (
+    <>
+      <Background />
+      <Nav />
+      <main className="mx-auto max-w-7xl px-4 pb-24 pt-32 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <SectionTitle
+            eyebrow="On-chain activity"
+            title="Everything the account has actually done."
+            body="No fabricated activity cards. Events are fetched from IdentityRegistry and AuthConfigManager on Monad testnet."
+          />
+          <OnChainPill text="Live event stream" />
+        </div>
+        <div className="mt-12 grid gap-3 sm:grid-cols-3">
+          <Stat
+            icon={Blocks}
+            label="Config version"
+            value={x?.configVersion?.toString() || "—"}
+          />
+          <Stat
+            icon={DatabaseZap}
+            label="Next action nonce"
+            value={x?.nextNonce?.toString() || "—"}
+          />
+          <Stat
+            icon={Clock3}
+            label="Pending change"
+            value={x?.hasPending ? "Yes" : "None"}
+          />
+        </div>
+        <section className="mt-8 glass overflow-hidden rounded-3xl">
+          <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <History size={16} className="text-mint" />
+              <p className="text-sm font-semibold">Recent contract events</p>
+            </div>
+            <a
+              href={`${MONAD_EXPLORER}/address/${address}#events`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-xs text-muted hover:text-mint"
+            >
+              Explorer <ArrowUpRight size={13} />
+            </a>
+          </div>
+          {loading ? (
+            <div className="space-y-2 p-5">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 animate-pulse rounded-2xl bg-white/5"
+                />
+              ))}
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="p-10 text-center">
+              <ShieldAlert className="mx-auto text-muted" size={24} />
+              <p className="mt-4 text-sm font-medium">
+                No recent events found in the scan window.
+              </p>
+              <p className="mt-2 text-xs text-muted">
+                The account may be newly initialized, or its activity is older
+                than the current 50k-block window.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {logs.map((log: any, i) => (
+                <div
+                  key={`${log.transactionHash}-${i}`}
+                  className="grid gap-3 border-b border-white/5 px-5 py-5 last:border-0 sm:grid-cols-[1fr_160px_130px]"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={14} className="text-mint" />
+                      <p className="text-sm font-medium">
+                        {friendlyEvent(log.eventName)}
+                      </p>
+                    </div>
+                    <p className="mono mt-2 text-[10px] text-muted">
+                      tx {shortAddress(log.transactionHash)} · block{" "}
+                      {log.blockNumber?.toString()}
+                    </p>
+                  </div>
+                  <div className="text-xs text-muted">{formatEvent(log)}</div>
+                  <a
+                    href={`${MONAD_EXPLORER}/tx/${log.transactionHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 text-xs text-muted hover:text-mint sm:justify-end"
+                  >
+                    View transaction <ArrowUpRight size={13} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+        <div className="mt-6 rounded-2xl border border-white/7 bg-white/[.02] p-5 text-xs leading-5 text-muted">
+          Event scanning is intentionally browser-to-RPC. There is no private
+          activity API sitting between you and Monad for this view.
+        </div>
+      </main>
+    </>
+  );
+}
+function friendlyEvent(n: string) {
+  return n?.replace(/([A-Z])/g, " $1").trim() || "Anchor event";
+}
+function formatEvent(log: any) {
+  const a = log.args || {};
+  if (a.displayName)
+    return `identity ${a.displayName} · owner ${shortAddress(a.owner)}`;
+  if (a.identityId) return `identity ${shortAddress(a.identityId)}`;
+  if (a.to) return `destination ${shortAddress(a.to)}`;
+  if (a.riskScore !== undefined) return `risk ${a.riskScore}/100`;
+  if (a.amount !== undefined)
+    return `amount ${formatEther(BigInt(a.amount))} MON`;
+  if (a.newVersion !== undefined) return `version ${a.newVersion.toString()}`;
+  return "Account security event";
+}
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="glass rounded-2xl p-5">
+      <Icon size={16} className="text-mint" />
+      <p className="mt-4 text-[10px] uppercase tracking-[.16em] text-muted">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-semibold">{value}</p>
+    </div>
+  );
+}

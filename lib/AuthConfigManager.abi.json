@@ -1,0 +1,914 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "identityRegistry",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "IDENTITY_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IdentityRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "RECONFIG_DELAY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "TRANSFER_DELAY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "accountBalance",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "actionNonce",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "activateReconfiguration",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "activateTransfer",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "confirmHighRiskProposal",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "proof",
+        "type": "tuple",
+        "internalType": "struct AuthConfigManager.AuthProof",
+        "components": [
+          {
+            "name": "authenticatorId",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "sigR",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sigS",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "contestReconfiguration",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "proof",
+        "type": "tuple",
+        "internalType": "struct AuthConfigManager.AuthProof",
+        "components": [
+          {
+            "name": "authenticatorId",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "sigR",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sigS",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "contestTransfer",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "proof",
+        "type": "tuple",
+        "internalType": "struct AuthConfigManager.AuthProof",
+        "components": [
+          {
+            "name": "authenticatorId",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "sigR",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sigS",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "deposit",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "getConfig",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct AuthConfigManager.AuthConfig",
+        "components": [
+          {
+            "name": "authenticators",
+            "type": "tuple[]",
+            "internalType": "struct AuthConfigManager.Authenticator[]",
+            "components": [
+              {
+                "name": "id",
+                "type": "uint8",
+                "internalType": "uint8"
+              },
+              {
+                "name": "scheme",
+                "type": "uint8",
+                "internalType": "enum AuthConfigManager.Scheme"
+              },
+              {
+                "name": "identityId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "signingPolicy",
+            "type": "uint8[]",
+            "internalType": "uint8[]"
+          },
+          {
+            "name": "signingThreshold",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "reconfigPolicy",
+            "type": "uint8[]",
+            "internalType": "uint8[]"
+          },
+          {
+            "name": "reconfigThreshold",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "configVersion",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getConfigVersion",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPendingReconfig",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct AuthConfigManager.PendingReconfig",
+        "components": [
+          {
+            "name": "authenticators",
+            "type": "tuple[]",
+            "internalType": "struct AuthConfigManager.Authenticator[]",
+            "components": [
+              {
+                "name": "id",
+                "type": "uint8",
+                "internalType": "uint8"
+              },
+              {
+                "name": "scheme",
+                "type": "uint8",
+                "internalType": "enum AuthConfigManager.Scheme"
+              },
+              {
+                "name": "identityId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "signingPolicy",
+            "type": "uint8[]",
+            "internalType": "uint8[]"
+          },
+          {
+            "name": "signingThreshold",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "reconfigPolicy",
+            "type": "uint8[]",
+            "internalType": "uint8[]"
+          },
+          {
+            "name": "reconfigThreshold",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "proposedAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "riskScore",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "requiresExtraConfirmation",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "extraConfirmationGiven",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initializeConfig",
+    "inputs": [
+      {
+        "name": "authenticators",
+        "type": "tuple[]",
+        "internalType": "struct AuthConfigManager.Authenticator[]",
+        "components": [
+          {
+            "name": "id",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "scheme",
+            "type": "uint8",
+            "internalType": "enum AuthConfigManager.Scheme"
+          },
+          {
+            "name": "identityId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      },
+      {
+        "name": "signingPolicy",
+        "type": "uint8[]",
+        "internalType": "uint8[]"
+      },
+      {
+        "name": "signingThreshold",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "reconfigPolicy",
+        "type": "uint8[]",
+        "internalType": "uint8[]"
+      },
+      {
+        "name": "reconfigThreshold",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "knownDestination",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "lastActivityAt",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingTransfers",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "proposedAt",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "exists",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "proposeReconfiguration",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "authenticators",
+        "type": "tuple[]",
+        "internalType": "struct AuthConfigManager.Authenticator[]",
+        "components": [
+          {
+            "name": "id",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "scheme",
+            "type": "uint8",
+            "internalType": "enum AuthConfigManager.Scheme"
+          },
+          {
+            "name": "identityId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      },
+      {
+        "name": "signingPolicy",
+        "type": "uint8[]",
+        "internalType": "uint8[]"
+      },
+      {
+        "name": "signingThreshold",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "reconfigPolicy",
+        "type": "uint8[]",
+        "internalType": "uint8[]"
+      },
+      {
+        "name": "reconfigThreshold",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "isKnownDevicePattern",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "proofs",
+        "type": "tuple[]",
+        "internalType": "struct AuthConfigManager.AuthProof[]",
+        "components": [
+          {
+            "name": "authenticatorId",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "sigR",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sigS",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "recentFailedAttempts",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "verifiedTransfer",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "proofs",
+        "type": "tuple[]",
+        "internalType": "struct AuthConfigManager.AuthProof[]",
+        "components": [
+          {
+            "name": "authenticatorId",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "sigR",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sigS",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "ConfigInitialized",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "configVersion",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ExtraConfirmationGiven",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FundsReceived",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NewDestinationTransferActivated",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReconfigurationActivated",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newVersion",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReconfigurationContested",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "contestedAt",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReconfigurationProposed",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "currentVersion",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "proposedAt",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "riskScore",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransferContested",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "contestedAt",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransferProposed",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "proposedAt",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VerifiedTransferExecuted",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nonce",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  }
+]

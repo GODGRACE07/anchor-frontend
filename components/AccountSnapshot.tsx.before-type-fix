@@ -1,0 +1,62 @@
+"use client";
+import { useAccount, useReadContract } from "wagmi";
+import { ShieldCheck, KeyRound, Clock3, WalletMinimal } from "lucide-react";
+import { CONTRACTS } from "@/lib/anchor";
+import { formatEther } from "viem";
+export default function AccountSnapshot() {
+  const { address, isConnected } = useAccount();
+  const { data: s } = useReadContract({
+    address: CONTRACTS.anchorViews.address,
+    abi: CONTRACTS.anchorViews.abi,
+    functionName: "getAccountSummary",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 6000 },
+  });
+  const { data: bal } = useReadContract({
+    address: CONTRACTS.authConfigManager.address,
+    abi: CONTRACTS.authConfigManager.abi,
+    functionName: "accountBalance",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 6000 },
+  });
+  if (!isConnected) return null;
+  const x = s;
+
+  const cards = [
+    {
+      icon: ShieldCheck,
+      label: "Version",
+      value: x?.configVersion ? x.configVersion.toString() : "Not initialized",
+    },
+    {
+      icon: KeyRound,
+      label: "Authenticators",
+      value: x?.authenticators?.length ?? 0,
+    },
+    {
+      icon: Clock3,
+      label: "Protection",
+      value: x?.hasPending ? "Action pending" : "No pending change",
+    },
+    {
+      icon: WalletMinimal,
+      label: "Shield balance",
+      value:
+        bal !== undefined ? `${Number(formatEther(bal)).toFixed(4)} MON` : "—",
+    },
+  ];
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-4">
+      {cards.map(({ icon: Icon, label, value }) => (
+        <div key={label} className="glass rounded-2xl p-4">
+          <Icon size={16} className="text-mint" />
+          <p className="mt-3 text-[11px] uppercase tracking-[.14em] text-muted">
+            {label}
+          </p>
+          <p className="mt-1 text-sm font-semibold">{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}

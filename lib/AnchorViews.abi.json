@@ -1,0 +1,200 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "identityRegistry",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "authConfigManager",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "AUTH_CONFIG_MANAGER",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract AuthConfigManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "IDENTITY_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IdentityRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAccountSummary",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "summary",
+        "type": "tuple",
+        "internalType": "struct AnchorViews.AccountSummary",
+        "components": [
+          {
+            "name": "configVersion",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "authenticators",
+            "type": "tuple[]",
+            "internalType": "struct AnchorViews.AuthenticatorView[]",
+            "components": [
+              {
+                "name": "id",
+                "type": "uint8",
+                "internalType": "uint8"
+              },
+              {
+                "name": "scheme",
+                "type": "uint8",
+                "internalType": "enum AuthConfigManager.Scheme"
+              },
+              {
+                "name": "identityId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "owner",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "displayName",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "active",
+                "type": "bool",
+                "internalType": "bool"
+              }
+            ]
+          },
+          {
+            "name": "signingPolicy",
+            "type": "uint8[]",
+            "internalType": "uint8[]"
+          },
+          {
+            "name": "signingThreshold",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "reconfigPolicy",
+            "type": "uint8[]",
+            "internalType": "uint8[]"
+          },
+          {
+            "name": "reconfigThreshold",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "hasPending",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "pendingProposedAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "pendingActivatesAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "pendingRiskScore",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "pendingRequiresExtraConfirmation",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "pendingExtraConfirmationGiven",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "nextNonce",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isInitialized",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "needsAttention",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

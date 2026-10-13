@@ -1,0 +1,3 @@
+"use client";
+import {motion} from "framer-motion";
+export default function Background(){return <div className="fixed inset-0 -z-10 overflow-hidden bg-void"><div className="absolute inset-0 grid-bg opacity-40"/><motion.div animate={{x:[-24,24,-24],y:[0,18,0]}} transition={{duration:20,repeat:Infinity,ease:"easeInOut"}} className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-mint/[.09] blur-[125px]"/><motion.div animate={{x:[18,-18,18],y:[-16,12,-16]}} transition={{duration:24,repeat:Infinity,ease:"easeInOut"}} className="absolute -right-40 top-1/4 h-[28rem] w-[28rem] rounded-full bg-mint2/[.055] blur-[130px]"/></div>}

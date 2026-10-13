@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Brand(){return <Link href="/" className="flex items-center gap-3 group"><span className="relative grid h-9 w-9 place-items-center rounded-xl border border-mint/30 bg-mint/5"><span className="h-3 w-3 rounded-[4px] bg-mint shadow-[0_0_22px_rgba(139,231,162,.65)]"/><span className="absolute inset-1 rounded-lg border border-mint/10"/></span><span className="display text-lg font-semibold tracking-tight">ANCHOR</span></Link>}

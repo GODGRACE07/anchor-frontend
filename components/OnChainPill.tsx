@@ -1,0 +1,2 @@
+import {CheckCircle2,ExternalLink} from "lucide-react";
+export default function OnChainPill({text="Verified on Monad",href}:{text?:string;href?:string}){const c=<span className="inline-flex items-center gap-1.5 rounded-full border border-mint/10 bg-mint/5 px-2.5 py-1 text-[10px] uppercase tracking-[.12em] text-mint"><CheckCircle2 size={12}/>{text}</span>;return href?<a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:opacity-80">{c}<ExternalLink size={11} className="text-muted"/></a>:c}
