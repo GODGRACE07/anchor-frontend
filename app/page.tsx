@@ -44,7 +44,7 @@ const threats = [
     n: "03",
     label: "DESTINATION DECEPTION",
     title: "A valid signature can still send money to the wrong address.",
-    body: "Anchor treats unfamiliar destinations differently: a new recipient is queued behind a one-hour window and can be contested before settlement. Previously trusted destinations can use the fast path.",
+    body: "Anchor treats unfamiliar destinations differently: a new recipient is queued behind a delay window (one hour in production, 15 seconds in this demo build) and can be contested before settlement. Previously trusted destinations can use the fast path.",
     icon: LockKeyhole,
     tone: "lime",
     tag: "TRANSFER SHIELD",
